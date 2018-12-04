@@ -19,7 +19,7 @@ namespace BrightSpark.ObservableProxy
 
                     // trigger via reflection
 
-                    var fieldInfo = o.GetType().BaseType.GetField("PropertyChanged", BindingFlags.Instance | BindingFlags.NonPublic);
+                    var fieldInfo = GetPropertyChangedFieldInfo(o.GetType());
                     var eventDelegate = (MulticastDelegate)fieldInfo.GetValue(o);
                     if (eventDelegate != null)
                     {
@@ -31,7 +31,23 @@ namespace BrightSpark.ObservableProxy
                 }
             };
 
-            return ProxyBuilder.CreateProxy<T>(options);
+            return ProxyBuilder.CreateProxy(options);
+        }
+
+        public static FieldInfo GetPropertyChangedFieldInfo(Type type)
+        {
+            while (type != null && type != typeof(object))
+            {
+                var fieldInfo = type.GetField("PropertyChanged", BindingFlags.Instance | BindingFlags.NonPublic);
+                if (fieldInfo != null)
+                {
+                    return fieldInfo;
+                }
+
+                type = type.BaseType;
+            }
+
+            return null;
         }
     }
 }
