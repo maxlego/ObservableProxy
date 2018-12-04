@@ -141,7 +141,6 @@ namespace BrightSpark.ObservableProxy
             }
             else
             {
-                //useBase = true;
                 tb = ModuleBuilder.DefineType(proxyTypeName, TypeAttributes.Public, baseType);
             }
 
@@ -150,31 +149,36 @@ namespace BrightSpark.ObservableProxy
                 var propName = propInfo.Name;
                 var propType = propInfo.PropertyType;
 
-                //create property
+                // create property
                 PropertyBuilder prop = tb.DefineProperty(propName, PropertyAttributes.SpecialName, propType, null);
 
-                FieldBuilder backingField = null;
+                Lazy<FieldBuilder> backingField = new Lazy<FieldBuilder>(
+                    () => tb.DefineField($"_{propName}", propType, FieldAttributes.Private)
+                );
 
-                bool useBaseGet = !baseType.IsInterface && !propInfo.GetGetMethod().IsAbstract;
-                bool useBaseSet = !baseType.IsInterface && !propInfo.GetSetMethod().IsAbstract;
-
-                if (!useBaseGet || !useBaseSet)
+                var baseGet = propInfo.GetGetMethod();
+                if (baseGet != null)
                 {
-                    //create the backing field
-                    backingField = tb.DefineField("_" + propName, propType, FieldAttributes.Private);
+                    var useBaseGet = !baseType.IsInterface && !baseGet.IsAbstract;
+                    var propGetter = useBaseGet
+                        ? CreateGetter(propInfo, tb)
+                        : CreateGetter(backingField.Value, tb, propName);
+
+                    // assign getter
+                    prop.SetGetMethod(propGetter);
                 }
 
-                var propGetter = useBaseGet 
-                    ? CreateGetter(propInfo, tb) 
-                    : CreateGetter(backingField, tb, propName);
+                var baseSet = propInfo.GetSetMethod();
+                if (baseSet != null)
+                {
+                    var useBaseSet = !baseType.IsInterface && !baseSet.IsAbstract;
+                    var propSetter = useBaseSet
+                        ? CreateSetter(propInfo, tb, options.OnSet)
+                        : CreateSetter(backingField.Value, tb, propName, options.OnSet);
 
-                var propSetter = useBaseSet 
-                    ? CreateSetter(propInfo, tb, options.OnSet) 
-                    : CreateSetter(backingField, tb, propName, options.OnSet);
-
-                //assign getter and setter
-                prop.SetGetMethod(propGetter);
-                prop.SetSetMethod(propSetter);
+                    // assign setter
+                    prop.SetSetMethod(propSetter);
+                }
             }
 
             // default constructor

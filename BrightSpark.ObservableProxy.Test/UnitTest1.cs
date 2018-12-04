@@ -9,9 +9,26 @@ namespace BrightSpark.ObservableProxy.Test
     {
         public class Foo : INotifyPropertyChanged
         {
+            private string _y;
+
+            public bool BaseYWasSet { get; private set; }
+            public bool BaseYWasGet { get; private set; }
+
             public virtual string X { get; set; } = "x";
 
-            public virtual string Y { get; set; }
+            public virtual string Y
+            {
+                get
+                {
+                    BaseYWasGet = true;
+                    return _y;
+                }
+                set
+                {
+                    _y = value;
+                    BaseYWasSet = true;
+                }
+            }
 
             public virtual string Z { get; set; }
 
@@ -65,6 +82,22 @@ namespace BrightSpark.ObservableProxy.Test
             Assert.Contains(nameof(Foo.X), changedProperties);
             Assert.Contains(nameof(Foo.Y), changedProperties);
             Assert.DoesNotContain(nameof(Foo.Z), changedProperties);
+        }
+
+        [Fact]
+        public void BaseCall()
+        {
+            var proxy = Observable.Create<Foo>();
+
+            Assert.False(proxy.BaseYWasGet);
+            Assert.False(proxy.BaseYWasSet);
+
+            var y = proxy.Y;
+            Assert.True(proxy.BaseYWasGet);
+            Assert.False(proxy.BaseYWasSet);
+
+            proxy.Y = "y";
+            Assert.True(proxy.BaseYWasSet);
         }
 
         [Fact]
