@@ -299,3 +299,4 @@ __pycache__/
 nuget.config
 
 
+.vscode/

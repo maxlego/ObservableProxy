@@ -19,7 +19,7 @@ namespace BrightSpark.ObservableProxy
             return ProxyBuilder.CreateProxy(options);
         }
 
-        public static void OnSet<T>(T o, string propertyName, object prevValue, object value)
+        public static void OnSet<T>(T o, string propertyName, object prevValue, object value) where T : INotifyPropertyChanged
         {
             if (Equals(prevValue, value))
             {
@@ -29,6 +29,12 @@ namespace BrightSpark.ObservableProxy
             // trigger via reflection
 
             var fieldInfo = GetPropertyChangedFieldInfo(o.GetType());
+            if (fieldInfo == null) 
+            {
+                // this should not happen
+                return;
+            }
+
             var eventDelegate = (MulticastDelegate)fieldInfo.GetValue(o);
             if (eventDelegate == null)
             {
@@ -50,7 +56,7 @@ namespace BrightSpark.ObservableProxy
                 var t = type;
                 while (t != null && t != typeof(object))
                 {
-                    var fi = t.GetField("PropertyChanged", BindingFlags.Instance | BindingFlags.NonPublic);
+                    var fi = t.GetField(nameof(INotifyPropertyChanged.PropertyChanged), BindingFlags.Instance | BindingFlags.NonPublic);
                     if (fi != null)
                     {
                         PropertyChangedFieldInfoByType[type] = fi;
