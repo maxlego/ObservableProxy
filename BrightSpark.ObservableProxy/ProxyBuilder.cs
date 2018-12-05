@@ -286,15 +286,15 @@ namespace BrightSpark.ObservableProxy
             ilSet.Emit(OpCodes.Ldarg_1);
             ilSet.Emit(OpCodes.Stfld, backingField);
 
-            ilSet.Emit_LdInst(onSet, false);
-
             // onSet.Invoke(this, propName, oldValue, this._x)
-            ilSet.Emit(OpCodes.Ldarg_0);
-            ilSet.Emit(OpCodes.Ldstr, propName);
-            ilSet.Emit(OpCodes.Ldloc, ilTemp);
-            ilSet.Emit(OpCodes.Ldarg_0);
-            ilSet.Emit(OpCodes.Ldfld, backingField);
-            ilSet.Emit(OpCodes.Callvirt, onSet.GetType().GetMethod("Invoke"));
+            ilSet.CallDelegate(onSet, il =>
+            {
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Ldstr, propName);
+                il.Emit(OpCodes.Ldloc, ilTemp);
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Ldfld, backingField);
+            });
 
             // return
             ilSet.Emit(OpCodes.Nop);
@@ -324,15 +324,15 @@ namespace BrightSpark.ObservableProxy
             ilSet.Emit(OpCodes.Ldarg_1);
             ilSet.Emit(OpCodes.Call, propertyInfo.GetSetMethod());
 
-            ilSet.Emit_LdInst(onSet, false);
-
             // onSet.Invoke(this, propName, oldValue, base.X)
-            ilSet.Emit(OpCodes.Ldarg_0);
-            ilSet.Emit(OpCodes.Ldstr, propName);
-            ilSet.Emit(OpCodes.Ldloc, ilTemp);
-            ilSet.Emit(OpCodes.Ldarg_0);
-            ilSet.Emit(OpCodes.Call, propertyInfo.GetGetMethod());
-            ilSet.Emit(OpCodes.Callvirt, onSet.GetType().GetMethod("Invoke"));
+            ilSet.CallDelegate(onSet, il =>
+            {
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Ldstr, propName);
+                il.Emit(OpCodes.Ldloc, ilTemp);
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Call, propertyInfo.GetGetMethod());
+            });
 
             // return
             ilSet.Emit(OpCodes.Nop);

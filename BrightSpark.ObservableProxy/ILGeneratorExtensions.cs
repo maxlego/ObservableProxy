@@ -32,5 +32,24 @@ namespace BrightSpark.ObservableProxy
                 gch.Free();
             }
         }
+
+        public static void CallDelegate(this ILGenerator il, Delegate action, Action<ILGenerator> setArguments)
+        {
+            if (!action.Method.IsPublic)
+            {
+                il.Emit_LdInst(action, false);
+            }
+
+            setArguments(il);
+
+            if (action.Method.IsPublic)
+            {
+                il.Emit(OpCodes.Call, action.Method);
+            }
+            else
+            {
+                il.Emit(OpCodes.Callvirt, action.GetType().GetMethod("Invoke"));
+            }
+        }
     }
 }
